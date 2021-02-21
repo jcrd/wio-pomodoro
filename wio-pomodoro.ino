@@ -53,7 +53,7 @@ void setup() {
     tft.begin();
     tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
-    tft.setFreeFont(FM24);
+    tft.setFreeFont(FMB24);
     update();
 }
 
