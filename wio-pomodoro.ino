@@ -69,10 +69,10 @@ void draw_paused(int x, int y) {
 }
 
 void update(int update_image) {
-    int clock_x = SCREEN_W / 2 - CLOCK_LEN / 2 + IMAGE_SIZE / 2 + FONT_SIZE / 2;
-    int clock_y = SCREEN_H / 2 - FONT_SIZE / 2;
     int image_x = SCREEN_W / 2 - CLOCK_LEN / 2 - IMAGE_SIZE / 2;
     int image_y = SCREEN_H / 2 - IMAGE_SIZE / 2;
+    int clock_x = image_x + IMAGE_SIZE / 2 + FONT_SIZE;
+    int clock_y = SCREEN_H / 2 - FONT_SIZE / 2;
     int rep_x = clock_x + CLOCK_LEN - FONT_SIZE / 2;
     int rep_y = SCREEN_H / 2 - FONT_SIZE / 2 - 4;
     int paused_x = clock_x + CLOCK_LEN;
