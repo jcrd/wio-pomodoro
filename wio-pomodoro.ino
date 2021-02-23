@@ -8,11 +8,16 @@
 #include "Free_Fonts.h"
 #include "RawImage.h"
 
+#include "lib/lcd_backlight.hpp"
+
 TFT_eSPI tft = TFT_eSPI();
+LCDBackLight backlight;
 
 enum {
     TOGGLE_RUNNING,
     RESET,
+    BACKLIGHT_UP,
+    BACKLIGHT_DOWN,
     INPUT_N,
 };
 
@@ -25,9 +30,14 @@ enum {
 
 const int BATTERY_CAPACITY = 650;
 
+const int DEFAULT_BRIGHTNESS = 10;
+const int BRIGHTNESS_STEP = 2;
+
 const int input_map[] = {
     [TOGGLE_RUNNING] = WIO_KEY_C,
     [RESET] = WIO_KEY_A,
+    [BACKLIGHT_UP] = WIO_5S_UP,
+    [BACKLIGHT_DOWN] = WIO_5S_DOWN,
 };
 
 const int WORKING_SEC = 25 * 60;
@@ -66,11 +76,21 @@ Raw8 *images[4];
 int has_battery = 0;
 int last_battery_soc = 0;
 
+int max_brightness;
+int brightness = DEFAULT_BRIGHTNESS;
+
 void load_images() {
     images[STOPPED] = newImage<uint8_t>("stopped.bmp");
     images[WORKING] = newImage<uint8_t>("working.bmp");
     images[SHORT_BREAK] = newImage<uint8_t>("short_break.bmp");
     images[LONG_BREAK] = newImage<uint8_t>("long_break.bmp");
+}
+
+void inc_brightness(int i) {
+    brightness += i;
+    if (brightness > max_brightness || brightness < 1)
+        brightness = 1;
+    backlight.setBrightness(brightness);
 }
 
 void draw_paused(int x, int y) {
@@ -131,6 +151,12 @@ void setup() {
     Serial.begin(115200);
     pinMode(WIO_KEY_A, INPUT_PULLUP);
     pinMode(WIO_KEY_C, INPUT_PULLUP);
+    pinMode(WIO_5S_UP, INPUT_PULLUP);
+    pinMode(WIO_5S_DOWN, INPUT_PULLUP);
+
+    backlight.initialize();
+    backlight.setBrightness(brightness);
+    max_brightness = backlight.getMaxBrightness();
 
     if (!SD.begin(SDCARD_SS_PIN, SDCARD_SPI)) {
         Serial.println("SDCARD initialization failed");
@@ -177,6 +203,12 @@ void loop() {
                     running = !running;
                     update(0);
                 }
+                break;
+            case BACKLIGHT_UP:
+                inc_brightness(BRIGHTNESS_STEP);
+                break;
+            case BACKLIGHT_DOWN:
+                inc_brightness(-BRIGHTNESS_STEP);
                 break;
         }
         input_state[i] = HIGH;
