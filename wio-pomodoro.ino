@@ -26,6 +26,9 @@ const int SHORT_BREAK_SEC = 5 * 60;
 const int LONG_BREAK_SEC = 15 * 60;
 const int SET_LENGTH = 4;
 
+const GFXfont *SMALL_FONT = FMB9;
+const GFXfont *LARGE_FONT = FMB24;
+
 const int SCREEN_W = 320;
 const int SCREEN_H = 240;
 const int IMAGE_SIZE = 64;
@@ -47,6 +50,7 @@ unsigned long last_keypress[2] = {0};
 int key_state[2] = {HIGH};
 
 char clock_buf[6];
+char rep_buf[2];
 Raw8 *images[4];
 
 void load_images() {
@@ -69,16 +73,25 @@ void update(int update_image) {
     int clock_y = SCREEN_H / 2 - FONT_SIZE / 2;
     int image_x = SCREEN_W / 2 - CLOCK_LEN / 2 - IMAGE_SIZE / 2;
     int image_y = SCREEN_H / 2 - IMAGE_SIZE / 2;
+    int rep_x = clock_x + CLOCK_LEN - FONT_SIZE / 2;
+    int rep_y = SCREEN_H / 2 - FONT_SIZE / 2 - 4;
     int paused_x = clock_x + CLOCK_LEN;
-    int paused_y = SCREEN_H / 2 - PAUSED_H / 2;
+    int paused_y = SCREEN_H / 2 - PAUSED_H / 2 + 4;
     int m = countdown / 60;
     int s = countdown % 60;
 
-    snprintf(clock_buf, sizeof(clock_buf), "%02d:%02d", m, s);
-    tft.drawString(clock_buf, clock_x, clock_y);
     if (update_image)
         tft.fillRect(image_x, image_y, IMAGE_SIZE, IMAGE_SIZE, TFT_BLACK);
     images[state]->draw(image_x, image_y);
+
+    snprintf(clock_buf, sizeof(clock_buf), "%02d:%02d", m, s);
+    tft.drawString(clock_buf, clock_x, clock_y);
+
+    snprintf(rep_buf, sizeof(rep_buf), "%d", rep + 1);
+    tft.setFreeFont(SMALL_FONT);
+    tft.drawString(rep_buf, rep_x, rep_y);
+    tft.setFreeFont(LARGE_FONT);
+
     draw_paused(paused_x, paused_y);
 
     last_update = millis();
@@ -99,7 +112,7 @@ void setup() {
     tft.begin();
     tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
-    tft.setFreeFont(FMB24);
+    tft.setFreeFont(LARGE_FONT);
     update(0);
 }
 
