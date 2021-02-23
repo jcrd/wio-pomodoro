@@ -3,6 +3,7 @@
 #include <TFT_eSPI.h>
 #include <Seeed_FS.h>
 #include <SD/Seeed_SD.h>
+#include <SparkFunBQ27441.h>
 
 #include "Free_Fonts.h"
 #include "RawImage.h"
@@ -21,6 +22,8 @@ enum {
     LONG_BREAK,
 };
 
+const int BATTERY_CAPACITY = 650;
+
 const int WORKING_SEC = 25 * 60;
 const int SHORT_BREAK_SEC = 5 * 60;
 const int LONG_BREAK_SEC = 15 * 60;
@@ -36,6 +39,7 @@ const int FONT_SIZE = 32;
 const int CLOCK_LEN = FONT_SIZE * 5;
 const int PAUSED_W = 4;
 const int PAUSED_H = FONT_SIZE / 2;
+const int BATTERY_BAR_H = 4;
 
 const unsigned long UPDATE_MS = 1000;
 const unsigned long DEBOUNCE_MS = 200;
@@ -53,6 +57,9 @@ char clock_buf[6];
 char rep_buf[2];
 Raw8 *images[4];
 
+int has_battery = 0;
+int last_battery_soc = 0;
+
 void load_images() {
     images[STOPPED] = newImage<uint8_t>("stopped.bmp");
     images[WORKING] = newImage<uint8_t>("working.bmp");
@@ -66,6 +73,20 @@ void draw_paused(int x, int y) {
         color = TFT_WHITE;
     tft.fillRect(x, y, PAUSED_W, PAUSED_H, color);
     tft.fillRect(x + PAUSED_W * 2, y, PAUSED_W, PAUSED_H, color);
+}
+
+void draw_battery_bar() {
+    int soc = lipo.soc();
+    if (soc == last_battery_soc)
+        return;
+    last_battery_soc = soc;
+    tft.fillRect(0, SCREEN_H - BATTERY_BAR_H, SCREEN_W, SCREEN_H,
+            TFT_BLACK);
+    tft.fillRect(0,
+            SCREEN_H - BATTERY_BAR_H,
+            SCREEN_W * soc / 100,
+            SCREEN_H,
+            TFT_WHITE);
 }
 
 void update(int update_image) {
@@ -94,6 +115,9 @@ void update(int update_image) {
 
     draw_paused(paused_x, paused_y);
 
+    if (has_battery)
+        draw_battery_bar();
+
     last_update = millis();
 }
 
@@ -105,6 +129,11 @@ void setup() {
     if (!SD.begin(SDCARD_SS_PIN, SDCARD_SPI)) {
         Serial.println("SDCARD initialization failed");
         while (1);
+    }
+
+    if (lipo.begin()) {
+        lipo.setCapacity(BATTERY_CAPACITY);
+        has_battery = 1;
     }
 
     load_images();
