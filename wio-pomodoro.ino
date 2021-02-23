@@ -11,8 +11,9 @@
 TFT_eSPI tft = TFT_eSPI();
 
 enum {
-    LEFT_KEY,
-    RIGHT_KEY,
+    TOGGLE_RUNNING,
+    RESET,
+    INPUT_N,
 };
 
 enum {
@@ -23,6 +24,11 @@ enum {
 };
 
 const int BATTERY_CAPACITY = 650;
+
+const int input_map[] = {
+    [TOGGLE_RUNNING] = WIO_KEY_C,
+    [RESET] = WIO_KEY_A,
+};
 
 const int WORKING_SEC = 25 * 60;
 const int SHORT_BREAK_SEC = 5 * 60;
@@ -50,8 +56,8 @@ int state = STOPPED;
 int countdown = 0;
 int rep = 0;
 
-unsigned long last_keypress[2] = {0};
-int key_state[2] = {HIGH};
+unsigned long last_input[INPUT_N] = {0};
+int input_state[INPUT_N] = {HIGH};
 
 char clock_buf[6];
 char rep_buf[2];
@@ -146,29 +152,23 @@ void setup() {
 }
 
 void loop() {
-    if (digitalRead(WIO_KEY_A) == LOW && key_state[RIGHT_KEY] != LOW) {
-        key_state[RIGHT_KEY] = LOW;
-        last_keypress[RIGHT_KEY] = millis();
-    }
-
-    if (digitalRead(WIO_KEY_C) == LOW && key_state[LEFT_KEY] != LOW) {
-        key_state[LEFT_KEY] = LOW;
-        last_keypress[LEFT_KEY] = millis();
-    }
-
     int last_state = state;
 
-    for (int i = 0; i < 2; i++) {
-        if (key_state[i] != LOW || millis() - last_keypress[i] < DEBOUNCE_MS)
+    for (int i = 0; i < INPUT_N; i++) {
+        if (digitalRead(input_map[i]) == LOW && input_state[i] != LOW) {
+            input_state[i] = LOW;
+            last_input[i] = millis();
+        }
+        if (input_state[i] != LOW || millis() - last_input[i] < DEBOUNCE_MS)
             continue;
         switch (i) {
-            case RIGHT_KEY:
+            case RESET:
                 running = 0;
                 state = STOPPED;
                 countdown = 0;
                 update(1);
                 break;
-            case LEFT_KEY:
+            case TOGGLE_RUNNING:
                 if (state == STOPPED) {
                     running = 1;
                     state = WORKING;
@@ -179,7 +179,7 @@ void loop() {
                 }
                 break;
         }
-        key_state[i] = HIGH;
+        input_state[i] = HIGH;
     }
 
     if (running && millis() - last_update >= UPDATE_MS) {
