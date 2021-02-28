@@ -190,6 +190,7 @@ void loop() {
         switch (i) {
             case RESET:
                 running = 0;
+                rep = 0;
                 state = STOPPED;
                 countdown = 0;
                 update(1);
