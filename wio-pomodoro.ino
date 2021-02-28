@@ -45,7 +45,6 @@ const int SHORT_BREAK_SEC = 5 * 60;
 const int LONG_BREAK_SEC = 15 * 60;
 const int SET_LENGTH = 4;
 
-const GFXfont *SMALL_FONT = FMB9;
 const GFXfont *LARGE_FONT = FMB24;
 
 const int SCREEN_W = 320;
@@ -56,6 +55,8 @@ const int CLOCK_LEN = FONT_SIZE * 5;
 const int PAUSED_W = 4;
 const int PAUSED_H = FONT_SIZE / 2;
 const int BATTERY_BAR_H = 4;
+const int REP_BAR_H = 8;
+const int REP_BAR_DIV = 2;
 
 const unsigned long UPDATE_MS = 1000;
 const unsigned long DEBOUNCE_MS = 200;
@@ -115,7 +116,18 @@ void draw_battery_bar() {
             TFT_WHITE);
 }
 
-void update(int update_image) {
+void draw_rep_bar(int x, int y, int w) {
+    if (rep == 0) {
+        tft.fillRect(x, y, w, REP_BAR_H, TFT_BLACK);
+        return;
+    }
+    int rep_div = w / SET_LENGTH;
+    int rep_w = rep_div - REP_BAR_DIV;
+    for (int i = 0; i < rep; i++)
+        tft.fillRect(x + i * rep_div, y, rep_w, REP_BAR_H, TFT_WHITE);
+}
+
+void update(int state_changed) {
     int image_x = SCREEN_W / 2 - CLOCK_LEN / 2 - IMAGE_SIZE / 2;
     int image_y = SCREEN_H / 2 - IMAGE_SIZE / 2;
     int clock_x = image_x + IMAGE_SIZE;
@@ -127,17 +139,14 @@ void update(int update_image) {
     int m = countdown / 60;
     int s = countdown % 60;
 
-    if (update_image)
+    if (state_changed) {
         tft.fillRect(image_x, image_y, IMAGE_SIZE, IMAGE_SIZE, TFT_BLACK);
+        draw_rep_bar(image_x, image_y + IMAGE_SIZE, IMAGE_SIZE + CLOCK_LEN);
+    }
     images[state]->draw(image_x, image_y);
 
     snprintf(clock_buf, sizeof(clock_buf), "%02d:%02d", m, s);
     tft.drawString(clock_buf, clock_x, clock_y);
-
-    snprintf(rep_buf, sizeof(rep_buf), "%d", rep);
-    tft.setFreeFont(SMALL_FONT);
-    tft.drawString(rep_buf, rep_x, rep_y);
-    tft.setFreeFont(LARGE_FONT);
 
     draw_paused(paused_x, paused_y);
 
@@ -201,6 +210,7 @@ void loop() {
                     rep = 1;
                     state = WORKING;
                     countdown = WORKING_SEC;
+                    update(1);
                 } else {
                     running = !running;
                     update(0);
