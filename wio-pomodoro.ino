@@ -235,7 +235,8 @@ void loop() {
             continue;
         switch (i) {
             case RESET:
-                running = 0;
+                if (running)
+                    break;
                 rep = 0;
                 state = STOPPED;
                 countdown = 0;
