@@ -134,7 +134,7 @@ void update(int update_image) {
     snprintf(clock_buf, sizeof(clock_buf), "%02d:%02d", m, s);
     tft.drawString(clock_buf, clock_x, clock_y);
 
-    snprintf(rep_buf, sizeof(rep_buf), "%d", rep + 1);
+    snprintf(rep_buf, sizeof(rep_buf), "%d", rep);
     tft.setFreeFont(SMALL_FONT);
     tft.drawString(rep_buf, rep_x, rep_y);
     tft.setFreeFont(LARGE_FONT);
@@ -197,6 +197,7 @@ void loop() {
             case TOGGLE_RUNNING:
                 if (state == STOPPED) {
                     running = 1;
+                    rep = 1;
                     state = WORKING;
                     countdown = WORKING_SEC;
                 } else {
@@ -218,8 +219,7 @@ void loop() {
         if (--countdown == 0) {
             switch (state) {
                 case WORKING:
-                    if (++rep == SET_LENGTH) {
-                        rep = 0;
+                    if (rep == SET_LENGTH) {
                         state = LONG_BREAK;
                         countdown = LONG_BREAK_SEC;
                     } else {
@@ -228,11 +228,13 @@ void loop() {
                     }
                     break;
                 case SHORT_BREAK:
+                    rep++;
                     state = WORKING;
                     countdown = WORKING_SEC;
                     break;
                 case LONG_BREAK:
                     running = 0;
+                    rep = 0;
                     state = STOPPED;
                     countdown = 0;
                     break;
