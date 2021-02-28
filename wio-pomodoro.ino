@@ -145,6 +145,7 @@ void update(int state_changed) {
     }
     images[state]->draw(image_x, image_y);
 
+    tft.fillRect(clock_x, clock_y, CLOCK_LEN, FONT_SIZE + 2, TFT_BLACK);
     snprintf(clock_buf, sizeof(clock_buf), "%02d:%02d", m, s);
     tft.drawString(clock_buf, clock_x, clock_y);
 
